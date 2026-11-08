@@ -1,319 +1,145 @@
 <div align="center">
 
-# 🎵 HitMoz Parser
+# 🎵 HitMoz
 
-**Парсер музыкального сайта [eu.hitmoz.com](https://eu.hitmoz.com) — отдаёт треки в формате JSON**
+**Blazing fast music API — today's chart and search with direct MP3 links.**
 
-Получайте топ-чарты и результаты поиска через простой HTTP API на Python + PHP
+Async Python client · REST API · CLI · Docker · MCP server for AI agents
 
-[![Python](https://img.shields.io/badge/Python-3.7+-3776AB?style=flat-square&logo=python&logoColor=white)](https://www.python.org/)
-[![PHP](https://img.shields.io/badge/PHP-7.4+-777BB4?style=flat-square&logo=php&logoColor=white)](https://www.php.net/)
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg?style=flat-square)](LICENSE)
-[![Open Source](https://img.shields.io/badge/Open%20Source-❤️-ec4899?style=flat-square)](https://github.com/Shukurov777/hitmoz-parser)
-
-[Возможности](#-возможности) ·
-[Установка](#-установка) ·
-[Использование](#-использование) ·
-[API](#-api-endpoints) ·
-[JSON](#-формат-ответа)
+[![Live API](https://img.shields.io/badge/live_API-bakha.me%2Fhitmoz-000000?style=for-the-badge)](https://bakha.me/hitmoz/docs)
+[![Python](https://img.shields.io/badge/python-3.10+-000000?style=for-the-badge&logo=python&logoColor=white)](#-python)
+[![Docker](https://img.shields.io/badge/docker-ready-000000?style=for-the-badge&logo=docker&logoColor=white)](#-docker)
+[![License](https://img.shields.io/badge/license-MIT-000000?style=for-the-badge)](LICENSE)
 
 </div>
 
----
-
-## 📖 О проекте
-
-**HitMoz Parser** — это инструмент с открытым исходным кодом, который парсит музыкальный портал `eu.hitmoz.com` и отдаёт результаты в виде чистого JSON. Подходит для интеграции в свои приложения, ботов, мобильные клиенты или для аналитики.
-
-Скрипт на **Python** делает основную работу (запрос → парсинг HTML → JSON), а лёгкий **PHP-скрипт** превращает его в HTTP-эндпоинт, который можно вызывать с любого устройства.
-
----
-
-## ✨ Возможности
-
-- 🔝 **Топ-чарт** — полный топ за сегодня (~192 трека, 4 страницы)
-- 🔍 **Поиск** — по названию трека, имени артиста или ключевому слову
-- 📦 **Чистый JSON** — никаких лишних обёрток, готовое API
-- 🖼 **Полные данные** — название, артист, длительность, обложка, ссылка на скачивание `.mp3`
-- 🌐 **Поддержка кириллицы** — корректные русские названия и имена
-- ⚡ **Быстро** — без headless-браузеров, чистый `requests` + `BeautifulSoup`
-- 🎨 **Стартовая страница** — красивый интерфейс с описанием API и формой поиска
-
----
-
-## 🚀 Установка
-
-### 1. Клонируем репозиторий
-
 ```bash
-git clone https://github.com/Shukurov777/hitmoz-parser.git
-cd hitmoz-parser
+curl "https://bakha.me/hitmoz/search?q=Jony&limit=1"
+```
+```json
+{
+  "success": true, "mode": "search", "query": "Jony", "count": 1, "cached": false, "took_ms": 393,
+  "songs": [{
+    "rank": 1, "id": "82169781", "title": "Журавли", "artist": "Клава Кока, JONY",
+    "duration": "03:18", "seconds": 198,
+    "cover": "https://statcore.hitmcdn.com/cover/...jpg",
+    "download": "https://ru.hitmox.com/get/music/20260924/..._82169781.mp3",
+    "stream": "https://ru.hitmox.com/get/cuts/.../82169781/...mp3",
+    "link": "https://ru.hitmox.com/song/82169781"
+  }]
+}
 ```
 
-### 2. Устанавливаем зависимости Python
+## ⚡ Speed
 
-```bash
-pip3 install -r requirements.txt
-```
+| | v1 (requests + BeautifulSoup) | **v2** |
+|---|---|---|
+| Chart, 192 tracks | 2.2 s | **0.7 s** (parallel pages over HTTP/2) |
+| Repeated request | 2.2 s | **< 0.1 ms** (in-memory cache) |
+| Public API `/top` | — | **~40 ms** (always warm) |
+| Parsing one page | ~150 ms (DOM) | **~1 ms** (precompiled regex on embedded JSON) |
 
-или вручную:
+How: one keep-alive HTTP/2 connection, all pages fetched concurrently, no DOM building, TTL cache,
+identical concurrent requests coalesced into one, background chart refresh in the API.
 
-```bash
-pip3 install requests beautifulsoup4
-```
+## 🌍 Connect from anywhere
 
-### 3. Готово!
+| Way | For | |
+|---|---|---|
+| **Public REST API** | any language, browser, bots, no install | [`https://bakha.me/hitmoz`](https://bakha.me/hitmoz/docs) |
+| **pip** | Python apps & bots | `pip install git+https://github.com/Shukurov777/hitmoz-parser` |
+| **Docker** | your own server | `docker compose up -d` |
+| **CLI** | terminal, scripts | `hitmoz top`, `hitmoz search "Jony"` |
+| **MCP** | Claude, Cursor & other AI agents | `hitmoz mcp` |
 
-Положи файлы на сервер с PHP и Python — всё.
+Mirror failover is built in (`eu.hitmoz.com → ru.hitmox.com → …`): if the site moves, the client follows.
+If it's blocked in your country — set `HITMOZ_PROXY=socks5://…`.
 
----
+## 🌐 REST API
 
-## 🛠 Использование
+Interactive docs: **[bakha.me/hitmoz/docs](https://bakha.me/hitmoz/docs)**
 
-### Через командную строку (терминал)
-
-**Топ сегодня:**
-
-```bash
-python3 parser.py
-```
-
-**Поиск:**
-
-```bash
-python3 parser.py search "Jony"
-python3 parser.py search "ЕГОР КРИД"
-python3 parser.py search "Мальборо"
-```
-
-Скрипт выводит JSON в stdout — можно перенаправить в файл:
-
-```bash
-python3 parser.py > top.json
-python3 parser.py search "Jony" > jony.json
-```
-
-### Через веб (HTTP API)
-
-После того как закинул файлы на сервер с PHP, открывай в браузере:
-
-| URL | Что делает |
+| Endpoint | Description |
 |---|---|
-| `index.php` | 🏠 Стартовая страница с описанием API |
-| `index.php?top-today` | 📊 JSON с топ-чартом |
-| `index.php?search=Jony` | 🔍 JSON с результатами поиска |
+| `GET /top?limit=100` | Today's chart, up to 500 tracks |
+| `GET /search?q=Jony&limit=48` | Search by artist or title, up to 400 tracks |
+| `GET /health` | Status and current mirror |
 
----
+CORS is open, responses are gzipped and cacheable. `index.php?top-today` and `index.php?search=` from v1 still work.
 
-## 🔌 API Endpoints
+```js
+const { songs } = await (await fetch("https://bakha.me/hitmoz/top?limit=10")).json();
+```
+```php
+$data = json_decode(file_get_contents('https://bakha.me/hitmoz/search?q=' . urlencode('ЕГОР КРИД')), true);
+```
 
-### `GET /index.php?top-today`
-
-Возвращает топ-чарт за сегодня — около 192 треков с 4 страниц сайта.
-
-**Пример запроса:**
+## 🐍 Python
 
 ```bash
-curl "https://your-domain.com/index.php?top-today"
+pip install git+https://github.com/Shukurov777/hitmoz-parser                       # client + CLI
+pip install "hitmoz[server] @ git+https://github.com/Shukurov777/hitmoz-parser"   # + REST API
 ```
-
----
-
-### `GET /index.php?search={запрос}`
-
-Поиск треков по любому слову.
-
-**Параметры:**
-
-| Параметр | Тип | Обязательный | Описание |
-|---|---|---|---|
-| `search` | string | ✅ | Имя артиста или название трека |
-
-**Примеры запросов:**
-
-```bash
-# Поиск артиста на латинице
-curl "https://your-domain.com/index.php?search=Jony"
-
-# Поиск артиста на кириллице (URL-encoded)
-curl "https://your-domain.com/index.php?search=%D0%95%D0%93%D0%9E%D0%A0%20%D0%9A%D0%A0%D0%98%D0%94"
-```
-
-В браузере просто напиши:
-
-```
-index.php?search=ЕГОР КРИД
-```
-
----
-
-## 📦 Формат ответа
-
-### Успешный ответ
-
-```json
-{
-  "success": true,
-  "mode": "top-today",
-  "source": "https://eu.hitmoz.com/songs/top-today",
-  "count": 192,
-  "songs": [
-    {
-      "rank": 1,
-      "title": "Камин",
-      "artist": "EMIN, JONY",
-      "duration": "03:08",
-      "cover": "https://eu.hitmoz.com/img/songs/81251971.jpg",
-      "download": "https://eu.hitmoz.com/get/music/20260410/EMIN_JONY_-_Kamin_81251971.mp3",
-      "link": "https://eu.hitmoz.com/song/81251971"
-    },
-    {
-      "rank": 2,
-      "title": "Дым",
-      "artist": "ЕГОР КРИД, JONY",
-      "duration": "02:53",
-      "cover": "https://eu.hitmoz.com/img/songs/80591268.jpg",
-      "download": "https://eu.hitmoz.com/get/music/20260103/EGOR_KRID_JONY_-_Dym_80591268.mp3",
-      "link": "https://eu.hitmoz.com/song/80591268"
-    }
-  ]
-}
-```
-
-### Описание полей
-
-| Поле | Тип | Описание |
-|---|---|---|
-| `success` | bool | Успешен ли запрос |
-| `mode` | string | Режим работы (`top-today` / `search`) |
-| `query` | string | Поисковый запрос (только для `search`) |
-| `source` | string | URL источника на сайте |
-| `count` | int | Количество найденных треков |
-| `songs[]` | array | Массив треков |
-
-### Поля каждого трека
-
-| Поле | Тип | Описание |
-|---|---|---|
-| `rank` | int | Позиция в списке (1, 2, 3...) |
-| `title` | string | Название трека |
-| `artist` | string | Имя артиста |
-| `duration` | string | Длительность в формате `MM:SS` |
-| `cover` | string | URL обложки (jpg/png) |
-| `download` | string | Прямая ссылка на `.mp3` файл |
-| `link` | string | Страница трека на сайте |
-
-### Ошибка
-
-```json
-{
-  "success": false,
-  "error": "По запросу «xyz» ничего не найдено"
-}
-```
-
----
-
-## 📁 Структура проекта
-
-```
-hitmoz-parser/
-├── parser.py           # 🐍 Парсер на Python (вся логика)
-├── index.php           # 🌐 PHP-обёртка + стартовая страница
-├── requirements.txt    # 📦 Зависимости Python
-├── README.md           # 📖 Этот файл
-├── LICENSE             # ⚖️ Лицензия MIT
-└── .gitignore          # 🚫 Исключения git
-```
-
----
-
-## 💡 Примеры использования
-
-### Получить топ в JavaScript
-
-```javascript
-fetch('https://your-domain.com/index.php?top-today')
-  .then(r => r.json())
-  .then(data => {
-    data.songs.forEach(song => {
-      console.log(`${song.rank}. ${song.artist} — ${song.title}`);
-    });
-  });
-```
-
-### Поиск через Python
 
 ```python
-import requests
+import asyncio
+from hitmoz import HitMoz
 
-r = requests.get('https://your-domain.com/index.php', params={'search': 'Jony'})
-data = r.json()
+async def main():
+    async with HitMoz() as hm:
+        chart, found = await asyncio.gather(hm.top(10), hm.search("Мальборо"))
+        for s in chart.songs:
+            print(s.rank, s.artist, "—", s.title, s.download)
 
-for song in data['songs']:
-    print(f"{song['artist']} — {song['title']} [{song['duration']}]")
-    print(f"  ↓ {song['download']}")
+asyncio.run(main())
 ```
 
-### Скачать первый трек из топа
+Blocking code? `from hitmoz.client import top, search; search("Jony").songs`
+
+## 💻 CLI
 
 ```bash
-URL=$(curl -s "https://your-domain.com/index.php?top-today" | jq -r '.songs[0].download')
-curl -O "$URL"
+hitmoz top -n 20               # pretty list in terminal
+hitmoz search "ЕГОР КРИД"
+hitmoz top --json > top.json   # JSON (also automatic when piped)
+hitmoz serve --port 8000       # REST API
 ```
 
----
+## 🐳 Docker
 
-## ⚙️ Требования
+```bash
+docker compose up -d           # → http://localhost:8000/docs
+# or
+docker run -p 8000:8000 ghcr.io/shukurov777/hitmoz
+```
 
-- 🐍 **Python 3.7+**
-- 🐘 **PHP 7.4+** (только если нужен HTTP API)
-- 📦 **pip-пакеты:** `requests`, `beautifulsoup4`
-- 🌐 На сервере должна быть включена функция `shell_exec()` в PHP
+## 🤖 MCP (AI agents)
 
----
+```bash
+pip install "hitmoz[mcp] @ git+https://github.com/Shukurov777/hitmoz-parser"
+claude mcp add hitmoz -- hitmoz mcp
+```
 
-## ⚠️ Важно
+Tools: `search_music`, `top_chart`. Then just ask: *"find 5 tracks by JONY and give me download links"*.
 
-> Этот проект создан **только в образовательных целях** для изучения техник веб-скрапинга и работы с HTML-парсерами. Все права на музыкальный контент принадлежат правообладателям и сайту `eu.hitmoz.com`. Используй ответственно и уважай terms of use исходного сайта.
+## ⚙️ Settings
 
----
+| Env | Default | |
+|---|---|---|
+| `HITMOZ_CACHE_TTL` | `600` | Cache lifetime, seconds (`0` = off) |
+| `HITMOZ_PROXY` | — | `http://…` or `socks5://…` |
+| `HITMOZ_MIRRORS` | built-in list | Comma-separated base URLs |
+| `HITMOZ_ROOT_PATH` | — | URL prefix when served behind a proxy (`/hitmoz`) |
 
-## 🤝 Участие в проекте
+## 📁 Examples
 
-Нашёл баг или хочешь предложить улучшение? Будем рады!
+[`examples/`](examples) — JavaScript, PHP, async Python and a **20-line Telegram music bot**.
 
-1. Сделай **Fork** репозитория
-2. Создай свою ветку: `git checkout -b feature/awesome-feature`
-3. Закоммить изменения: `git commit -m 'Add awesome feature'`
-4. Запушь: `git push origin feature/awesome-feature`
-5. Открой **Pull Request**
+## ⚠️ Disclaimer
 
-Также можешь:
-- ⭐ Поставить звезду репозиторию
-- 🐛 Создать [Issue](https://github.com/Shukurov777/hitmoz-parser/issues) с описанием бага
-- 💡 Предложить новую фичу
+For educational purposes. All music belongs to its rights holders. Respect the source site's terms and
+don't hammer it — the built-in cache exists for a reason.
 
----
+## License
 
-## 📜 Лицензия
-
-Проект распространяется под лицензией **MIT** — используй, изменяй, распространяй свободно. Подробности в файле [LICENSE](LICENSE).
-
----
-
-## 👤 Автор
-
-**Shukurov777**
-
-- 💻 GitHub: [@Shukurov777](https://github.com/Shukurov777)
-
----
-
-<div align="center">
-
-**Если проект помог — поставь ⭐️ на GitHub!**
-
-Сделано с 🖤 на Python + PHP
-
-</div>
+[MIT](LICENSE) © Bahrullo Shukurov · If it saved you time — **⭐ the repo**.

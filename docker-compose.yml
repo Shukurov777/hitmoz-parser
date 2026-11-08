@@ -1,0 +1,10 @@
+services:
+  hitmoz:
+    image: ghcr.io/shukurov777/hitmoz:latest
+    build: .
+    ports:
+      - "8000:8000"
+    environment:
+      HITMOZ_CACHE_TTL: 600
+      # HITMOZ_PROXY: socks5://user:pass@host:1080   # if the site is blocked in your region
+    restart: unless-stopped

@@ -1,0 +1,29 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "hitmoz"
+version = "2.0.0"
+description = "Blazing fast async client, REST API and MCP server for the HitMoz music catalog (chart + search with direct MP3 links)"
+readme = "README.md"
+license = { text = "MIT" }
+authors = [{ name = "Bahrullo Shukurov" }]
+requires-python = ">=3.10"
+keywords = ["music", "mp3", "parser", "scraper", "api", "hitmoz", "async", "fastapi", "mcp"]
+dependencies = ["httpx[http2]>=0.27"]
+
+[project.optional-dependencies]
+server = ["fastapi>=0.110", "uvicorn[standard]>=0.29", "orjson>=3.9"]
+mcp = ["mcp>=1.2"]
+all = ["hitmoz[server,mcp]"]
+
+[project.urls]
+Homepage = "https://github.com/Shukurov777/hitmoz-parser"
+Issues = "https://github.com/Shukurov777/hitmoz-parser/issues"
+
+[project.scripts]
+hitmoz = "hitmoz.cli:main"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/hitmoz"]

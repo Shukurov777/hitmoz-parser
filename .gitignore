@@ -30,3 +30,7 @@ cache/
 # OS
 Thumbs.db
 desktop.ini
+
+.venv/
+dist/
+*.egg-info/
